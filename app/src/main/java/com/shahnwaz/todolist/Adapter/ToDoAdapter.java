@@ -9,6 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+import android.widget.TextView;
 
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -32,28 +33,42 @@ public class ToDoAdapter extends RecyclerView.Adapter<ToDoAdapter.ViewHolder> {
         this.todoList = new ArrayList<>();
     }
 
+    @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.task_layout, parent, false);
         return new ViewHolder(itemView);
     }
 
+    @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
-        db.openDatabase();
         ToDoModel item = todoList.get(position);
         holder.task.setText(item.getTask());
+        holder.description.setText(item.getDescription());
+        holder.completionDate.setText(item.getCompletionDate());
+        holder.task.setOnCheckedChangeListener(null); // Avoid unnecessary callbacks
+
+        // Set checkbox state and listener
         holder.task.setChecked(toBoolean(item.getStatus()));
         holder.task.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                 if (isChecked) {
-                    db.updateStatus(item.getId(), 1);
+                    db.updateStatus(item.getId(), 1); // Update status to 1 (completed)
                 } else {
-                    db.updateStatus(item.getId(), 0);
+                    db.updateStatus(item.getId(), 0); // Update status to 0 (not completed)
                 }
+            }
+        });
+
+        holder.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                editItem(position);
             }
         });
     }
 
+    @Override
     public int getItemCount() {
         return todoList.size();
     }
@@ -62,7 +77,7 @@ public class ToDoAdapter extends RecyclerView.Adapter<ToDoAdapter.ViewHolder> {
         return n != 0;
     }
 
-    public void SetTask(List<ToDoModel> todoList) {
+    public void setTask(List<ToDoModel> todoList) {
         this.todoList = todoList;
         notifyDataSetChanged();
     }
@@ -70,13 +85,6 @@ public class ToDoAdapter extends RecyclerView.Adapter<ToDoAdapter.ViewHolder> {
     public Context getContext() {
         return activity;
     }
-
-//    public void deleteItem(int position) {
-//        ToDoModel item = todoList.get(position);
-//        db.deleteTask(item.getId());
-//        todoList.remove(position);
-//        notifyItemRemoved(position);
-//    }
 
     public void deleteItem(final int position) {
         final ToDoModel item = todoList.get(position);
@@ -102,35 +110,28 @@ public class ToDoAdapter extends RecyclerView.Adapter<ToDoAdapter.ViewHolder> {
         dialog.show();
     }
 
-
     public void editItem(int position) {
         ToDoModel item = todoList.get(position);
         Bundle bundle = new Bundle();
         bundle.putInt("id", item.getId());
         bundle.putString("task", item.getTask());
+        bundle.putString("description", item.getDescription());
+        bundle.putString("completionDate", item.getCompletionDate());
         AddNewTask fragment = new AddNewTask();
         fragment.setArguments(bundle);
         fragment.show(activity.getSupportFragmentManager(), AddNewTask.TAG);
     }
 
-
     public static class ViewHolder extends RecyclerView.ViewHolder {
         CheckBox task;
+        TextView description;
+        TextView completionDate;
 
         ViewHolder(View view) {
             super(view);
             task = view.findViewById(R.id.todoCheckBox);
+            description = view.findViewById(R.id.taskDescription);
+            completionDate = view.findViewById(R.id.taskCompletionDate);
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
